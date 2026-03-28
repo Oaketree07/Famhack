@@ -33,4 +33,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: { signIn: '/login' },
+  // Required for LAN IP access (phone on same network as laptop)
+  trustHost: true,
+  useSecureCookies: false,
 }

@@ -40,7 +40,7 @@ async function main() {
     where: { email: 'organiser@comp-soc.com' },
     update: {},
     create: {
-      name: 'Alex Organiser',
+      name: 'Speery',
       email: 'organiser@comp-soc.com',
       password: adminPassword,
       role: 'organiser',
@@ -51,7 +51,7 @@ async function main() {
     where: { email: 'member@ed.ac.uk' },
     update: {},
     create: {
-      name: 'Jamie Member',
+      name: 'Zeki',
       email: 'member@ed.ac.uk',
       password: memberPassword,
       role: 'member',

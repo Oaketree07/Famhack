@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold text-white">Welcome back, {session.user?.name} 👋</h1>
-              <p className="text-indigo-300 mt-1">University of Edinburgh Computing Society</p>
+              <p className="text-indigo-300 mt-1">Compsoc</p>
             </div>
             {profile && (
               <div className="flex items-center gap-4">

@@ -35,6 +35,11 @@ export default function Navbar() {
               Dashboard
             </Link>
           )}
+          {isOrganiser && (
+            <Link href="/beacon" className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${pathname.startsWith('/beacon') ? 'bg-red-600/70 text-white' : 'text-red-300 hover:text-white hover:bg-red-700/50'}`}>
+              📡 Beacon
+            </Link>
+          )}
           <Link href="/profile" className={`px-3 py-1.5 rounded-lg text-indigo-200 hover:text-white hover:bg-indigo-700/50 transition-colors ${pathname.startsWith('/profile') ? 'bg-indigo-700/50 text-white' : ''}`}>
             Profile
           </Link>
