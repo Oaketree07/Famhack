@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        String    @default("member") // member | organiser
+  createdAt   DateTime  @default(now())
+
+  attendances Attendance[]
+  feedbacks   Feedback[]
+  points      Points[]
+  orgSigs     SigOrganiser[]
+}
+
+model SIG {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String
+  color       String    @default("#6366f1")
+  beaconUUID  String?
+
+  events      Event[]
+  feedbacks   Feedback[]
+  points      Points[]
+  organisers  SigOrganiser[]
+}
+
+model SigOrganiser {
+  id     String @id @default(cuid())
+  userId String
+  sigId  String
+  user   User   @relation(fields: [userId], references: [id])
+  sig    SIG    @relation(fields: [sigId], references: [id])
+  @@unique([userId, sigId])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @default("")
+  sigId       String
+  date        DateTime
+  code        String    @unique
+  location    String    @default("")
+  createdAt   DateTime  @default(now())
+
+  sig         SIG       @relation(fields: [sigId], references: [id])
+  attendances Attendance[]
+  feedbacks   Feedback[]
+  points      Points[]
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
+  @@unique([userId, eventId])
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  userId       String
+  eventId      String
+  sigId        String
+  rating       Int      // 1-5
+  keepDoing    String   @default("")
+  improve      String   @default("")
+  isUseful     Boolean  @default(true)
+  filterReason String   @default("")
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id])
+  event        Event    @relation(fields: [eventId], references: [id])
+  sig          SIG      @relation(fields: [sigId], references: [id])
+  @@unique([userId, eventId])
+}
+
+model Points {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  sigId     String
+  amount    Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
+  sig       SIG      @relation(fields: [sigId], references: [id])
+  @@unique([userId, eventId])
+}
