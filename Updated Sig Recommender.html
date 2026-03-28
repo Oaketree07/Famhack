@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIG Finder — CompSoc Edinburgh</title>
+  <style>
+    :root {
+      --bg: #0c0c0e;
+      --surface: #18181b;
+      --surface2: #27272a;
+      --border: #3f3f46;
+      --red: #ef4444;
+      --red-glow: rgba(239,68,68,.25);
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --r: 14px;
+      --ease: cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 16px 56px;
+    }
+
+    /* Progress bar */
+    #prog {
+      position: fixed; top: 0; left: 0;
+      height: 3px; background: var(--red);
+      transition: width .5s var(--ease);
+      box-shadow: 0 0 14px var(--red-glow);
+      z-index: 999;
+    }
+
+    .quiz { width: 100%; max-width: 660px; padding-top: 28px; }
+
+    /* Steps */
+    .step { display: none; }
+    .step.active { display: block; animation: up .35s var(--ease) both; }
+    @keyframes up {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Welcome ── */
+    .welcome { text-align: center; padding: 16px 0 8px; }
+    .logo {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 1.4rem; font-weight: 900;
+      letter-spacing: 4px; color: var(--red);
+      margin-bottom: 32px;
+    }
+    .logo span { color: var(--text); }
+    .welcome h1 {
+      font-size: clamp(2.4rem, 7vw, 3.8rem);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -1.5px; margin-bottom: 16px;
+    }
+    .welcome .sub {
+      font-size: 1.05rem; color: var(--muted);
+      line-height: 1.65; max-width: 430px;
+      margin: 0 auto 28px;
+    }
+    .pills {
+      display: flex; flex-wrap: wrap;
+      gap: 8px; justify-content: center;
+      margin-bottom: 36px;
+    }
+    .pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 12px;
+      font-size: 0.78rem; color: var(--muted);
+    }
+
+    /* ── Step header ── */
+    .smeta { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .stag {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--red); background: rgba(239,68,68,.1);
+      padding: 4px 10px; border-radius: 100px;
+    }
+    .snum { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+    .stitle {
+      font-size: clamp(1.5rem, 4.5vw, 2rem);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: -.5px; margin-bottom: 8px;
+    }
+    .shint { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; }
+
+    /* ── Cards ── */
+    .cgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 10px; margin-bottom: 28px;
+    }
+    .cgrid.wide { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+
+    .card {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--r); padding: 20px 12px;
+      text-align: center; cursor: pointer;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: border-color .2s, background .2s, transform .15s;
+    }
+    .card:hover { border-color: #71717a; transform: translateY(-2px); }
+    .card:active { transform: scale(.95); }
+    .card.sel {
+      border-color: var(--red);
+      background: rgba(239,68,68,.1);
+      box-shadow: inset 0 0 0 1px rgba(239,68,68,.25);
+    }
+    .ci { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+    .cl { font-size: 0.82rem; font-weight: 600; line-height: 1.3; }
+
+    /* ── Chips ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+    .chip {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 100px; padding: 10px 18px;
+      cursor: pointer; font-size: 0.88rem; font-weight: 500;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      transition: border-color .2s, background .2s, color .2s, transform .1s;
+    }
+    .chip:hover { border-color: #71717a; }
+    .chip:active { transform: scale(.95); }
+    .chip.sel {
+      border-color: var(--red);
+      background: rgba(239,68,68,.12);
+      color: #fca5a5;
+    }
+
+    /* ── Slider ── */
+    .slider-wrap { margin-bottom: 32px; }
+    .slabels {
+      display: flex; justify-content: space-between;
+      font-size: 0.78rem; color: var(--muted); margin-bottom: 14px;
+    }
+    input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 8px; border-radius: 4px;
+      background: var(--surface2); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--red); cursor: grab;
+      box-shadow: 0 0 0 5px rgba(239,68,68,.2);
+      transition: box-shadow .2s, transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 10px rgba(239,68,68,.2); }
+    input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); cursor: grabbing; }
+    input[type=range]::-moz-range-thumb {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--red); border: none; cursor: grab;
+      box-shadow: 0 0 0 5px rgba(239,68,68,.2);
+    }
+    #sdesc {
+      text-align: center; margin-top: 16px;
+      font-size: 0.95rem; font-weight: 600;
+      color: var(--red); min-height: 1.4em;
+    }
+
+    /* ── Nav buttons ── */
+    .nav { display: flex; gap: 10px; margin-top: 4px; }
+    .btn {
+      padding: 13px 24px; border-radius: 100px; border: none;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .2s, transform .15s, box-shadow .2s, opacity .2s;
+    }
+    .btn-p { background: var(--red); color: #fff; flex: 1; }
+    .btn-p:hover:not(:disabled) {
+      background: #dc2626; transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(239,68,68,.35);
+    }
+    .btn-p:active:not(:disabled) { transform: scale(.97); }
+    .btn-p:disabled { opacity: .3; cursor: not-allowed; }
+    .btn-b {
+      background: var(--surface); color: var(--muted);
+      border: 2px solid var(--border);
+    }
+    .btn-b:hover { border-color: #71717a; color: var(--text); }
+
+    /* ── Results ── */
+    .rtop { text-align: center; margin-bottom: 32px; }
+    .rtop .emoji { font-size: 3rem; margin-bottom: 12px; }
+    .rtop h1 {
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      font-weight: 800; letter-spacing: -1px; margin-bottom: 8px;
+    }
+    .rtop p { color: var(--muted); font-size: 0.95rem; }
+
+    .rcard {
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--r); padding: 20px;
+      margin-bottom: 12px; transition: transform .2s;
+      animation: up .4s var(--ease) both;
+    }
+    .rcard:hover { transform: translateY(-2px); }
+    .rcard.best { border-color: var(--red); background: rgba(239,68,68,.06); }
+
+    .rh { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .ri { font-size: 2.2rem; line-height: 1; }
+    .rn { font-size: 1.05rem; font-weight: 700; }
+    .rbadge {
+      margin-left: auto; font-size: 0.75rem; font-weight: 700;
+      padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+    }
+    .gold   { background: rgba(234,179,8,.15);  color: #fde047; }
+    .silver { background: rgba(148,163,184,.12); color: #cbd5e1; }
+    .bronze { background: rgba(180,120,80,.12);  color: #d4a27a; }
+
+    .rdesc { font-size: 0.88rem; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+
+    .mrow {
+      display: flex; justify-content: space-between;
+      font-size: 0.78rem; color: var(--muted); margin-bottom: 5px;
+    }
+    .mpct { color: var(--red); font-weight: 700; }
+    .mbar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+    .mfill { height: 100%; background: var(--red); border-radius: 3px; width: 0; transition: width 1s var(--ease); }
+
+    /* Link buttons row */
+    .link-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    .dbtn {
+      display: inline-flex; align-items: center; gap: 7px;
+      text-decoration: none; background: #5865F2;
+      color: #fff; font-size: 0.83rem; font-weight: 700;
+      padding: 8px 16px; border-radius: 100px;
+      transition: background .2s, transform .15s;
+    }
+    .dbtn:hover { background: #4752c4; transform: translateY(-1px); }
+
+    .wabtn {
+      display: inline-flex; align-items: center; gap: 7px;
+      text-decoration: none; background: #25D366;
+      color: #fff; font-size: 0.83rem; font-weight: 700;
+      padding: 8px 16px; border-radius: 100px;
+      transition: background .2s, transform .15s;
+    }
+    .wabtn:hover { background: #128C7E; transform: translateY(-1px); }
+
+    /* Placeholder for missing links — visible to team/panel */
+    .link-todo {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface2); color: var(--muted);
+      font-size: 0.8rem; font-weight: 600;
+      padding: 8px 14px; border-radius: 100px;
+      border: 1.5px dashed var(--border);
+      cursor: default; font-style: italic;
+    }
+
+    .retry { text-align: center; margin-top: 28px; }
+
+    @media (max-width: 480px) {
+      .cgrid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+      .cgrid.wide { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="prog" style="width:0%"></div>
+
+<div class="quiz">
+
+  <!-- ══ WELCOME ══ -->
+  <section class="step active" id="s0">
+    <div class="welcome">
+      <div class="logo">COMP<span>SOC</span></div>
+      <h1>Find Your<br>Perfect SIG</h1>
+      <p class="sub">
+        5 quick questions — no typing needed — and we'll match you with the CompSoc groups built for you.
+      </p>
+      <div class="pills">
+        <span class="pill">SIGINT</span>
+        <span class="pill">GameDevSig</span>
+        <span class="pill">VenturePoint</span>
+        <span class="pill">SIGWeb</span>
+        <span class="pill">Tardis</span>
+        <span class="pill">Project Share</span>
+        <span class="pill">TypeSig</span>
+        <span class="pill">QuantSoc</span>
+        <span class="pill">CloudSIG</span>
+        <span class="pill">Edinburgh AI</span>
+        <span class="pill">CSSIG</span>
+        <span class="pill">Neurotech SIG</span>
+      </div>
+      <button class="btn btn-p" style="max-width:240px;margin:0 auto;display:block;" onclick="goTo(1)">
+        Let's go →
+      </button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 1: Course ══ -->
+  <section class="step" id="s1">
+    <div class="smeta"><span class="stag">Your Background</span><span class="snum">1 / 5</span></div>
+    <h2 class="stitle">What's your course?</h2>
+    <p class="shint">Tap the one closest to what you study.</p>
+    <div class="cgrid" id="g-course">
+      <div class="card" data-v="cs"     onclick="pick(this,'course')"><span class="ci">💻</span><span class="cl">Computer Science</span></div>
+      <div class="card" data-v="ai"     onclick="pick(this,'course')"><span class="ci">🤖</span><span class="cl">Artificial Intelligence</span></div>
+      <div class="card" data-v="se"     onclick="pick(this,'course')"><span class="ci">🔧</span><span class="cl">Software Engineering</span></div>
+      <div class="card" data-v="cogsci" onclick="pick(this,'course')"><span class="ci">🧠</span><span class="cl">Cognitive Science</span></div>
+      <div class="card" data-v="maths"  onclick="pick(this,'course')"><span class="ci">📐</span><span class="cl">Maths / Statistics</span></div>
+      <div class="card" data-v="other"  onclick="pick(this,'course')"><span class="ci">🌟</span><span class="cl">Other / Not sure</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-b" onclick="goTo(0)">← Back</button>
+      <button class="btn btn-p" id="n1" disabled onclick="goTo(2)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 2: Experience ══ -->
+  <section class="step" id="s2">
+    <div class="smeta"><span class="stag">Your Experience</span><span class="snum">2 / 5</span></div>
+    <h2 class="stitle">How much coding experience do you have?</h2>
+    <p class="shint">Drag the slider to match your level.</p>
+    <div class="slider-wrap">
+      <div class="slabels"><span>🐣 Just starting out</span><span>I dream in code 🚀</span></div>
+      <input type="range" id="expSlider" min="1" max="5" value="3" oninput="onSlider(this.value)" />
+      <div id="sdesc">Intermediate — I know my way around</div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-b" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-p" onclick="goTo(3)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 3: Interests ══ -->
+  <section class="step" id="s3">
+    <div class="smeta"><span class="stag">Your Interests</span><span class="snum">3 / 5</span></div>
+    <h2 class="stitle">What gets you excited?</h2>
+    <p class="shint">Tap everything that sparks your interest — pick as many as you like.</p>
+    <div class="chips" id="g-interests">
+      <div class="chip" data-v="security" onclick="toggleChip(this)">🔒 Hacking &amp; Security</div>
+      <div class="chip" data-v="gamedev"  onclick="toggleChip(this)">🎮 Game Design</div>
+      <div class="chip" data-v="creative" onclick="toggleChip(this)">✏️ Writing &amp; Creative</div>
+      <div class="chip" data-v="web"      onclick="toggleChip(this)">🌐 Web &amp; Apps</div>
+      <div class="chip" data-v="logic"    onclick="toggleChip(this)">🧮 Logic &amp; Maths</div>
+      <div class="chip" data-v="finance"  onclick="toggleChip(this)">📈 Finance &amp; Trading</div>
+      <div class="chip" data-v="cloud"    onclick="toggleChip(this)">☁️ Cloud &amp; DevOps</div>
+      <div class="chip" data-v="aiml"     onclick="toggleChip(this)">🤖 AI &amp; Machine Learning</div>
+      <div class="chip" data-v="compete"  onclick="toggleChip(this)">⚡ Competitive Challenges</div>
+      <div class="chip" data-v="art"      onclick="toggleChip(this)">🎨 Art &amp; Design</div>
+      <div class="chip" data-v="neuro"    onclick="toggleChip(this)">🧬 Neuro &amp; BioTech</div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-b" onclick="goTo(2)">← Back</button>
+      <button class="btn btn-p" id="n3" disabled onclick="goTo(4)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 4: Dream project ══ -->
+  <section class="step" id="s4">
+    <div class="smeta"><span class="stag">Your Ambitions</span><span class="snum">4 / 5</span></div>
+    <h2 class="stitle">What's your dream project?</h2>
+    <p class="shint">If you could start one today, which would you pick?</p>
+    <div class="cgrid wide" id="g-project">
+      <div class="card" data-v="sigint"     onclick="pick(this,'project')"><span class="ci">🔍</span><span class="cl">Hack a system (ethically)</span></div>
+      <div class="card" data-v="gamedev"    onclick="pick(this,'project')"><span class="ci">🕹️</span><span class="cl">Build a video game</span></div>
+      <div class="card" data-v="ProjectShare" onclick="pick(this,'project')"><span class="ci">📰</span><span class="cl">Create or share a personal project</span></div>
+      <div class="card" data-v="Tardis"     onclick="pick(this,'project')"><span class="ci">🌍</span><span class="cl">Provide computing services for projects</span></div>
+      <div class="card" data-v="typesig"    onclick="pick(this,'project')"><span class="ci">📐</span><span class="cl">Prove a theorem</span></div>
+      <div class="card" data-v="quantsoc"   onclick="pick(this,'project')"><span class="ci">📊</span><span class="cl">Build a trading bot</span></div>
+      <div class="card" data-v="cloudsig"   onclick="pick(this,'project')"><span class="ci">☁️</span><span class="cl">Deploy cloud infrastructure</span></div>
+      <div class="card" data-v="ai"         onclick="pick(this,'project')"><span class="ci">🧠</span><span class="cl">Train an AI model</span></div>
+      <div class="card" data-v="cssig"      onclick="pick(this,'project')"><span class="ci">🏆</span><span class="cl">Win a coding contest</span></div>
+      <div class="card" data-v="neurotech"  onclick="pick(this,'project')"><span class="ci">🧬</span><span class="cl">Build a brain-computer interface</span></div>
+  </div>
+    <div class="nav">
+      <button class="btn btn-b" onclick="goTo(3)">← Back</button>
+      <button class="btn btn-p" id="n4" disabled onclick="goTo(5)">Next →</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 5: Community vibe ══ -->
+  <section class="step" id="s5">
+    <div class="smeta"><span class="stag">Your Vibe</span><span class="snum">5 / 5</span></div>
+    <h2 class="stitle">What community vibe do you want?</h2>
+    <p class="shint">Pick the atmosphere that feels most like home.</p>
+    <div class="cgrid wide" id="g-vibe">
+      <div class="card" data-v="competitive" onclick="pick(this,'vibe')"><span class="ci">⚔️</span><span class="cl">Competitive &amp; challenging</span></div>
+      <div class="card" data-v="creative"    onclick="pick(this,'vibe')"><span class="ci">🎨</span><span class="cl">Creative &amp; expressive</span></div>
+      <div class="card" data-v="builders"    onclick="pick(this,'vibe')"><span class="ci">🔧</span><span class="cl">Builders &amp; makers</span></div>
+      <div class="card" data-v="research"    onclick="pick(this,'vibe')"><span class="ci">🔬</span><span class="cl">Research &amp; theory</span></div>
+      <div class="card" data-v="casual"      onclick="pick(this,'vibe')"><span class="ci">🌟</span><span class="cl">Chill &amp; welcoming</span></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-b" onclick="goTo(4)">← Back</button>
+      <button class="btn btn-p" id="n5" disabled onclick="showResults()">See my matches 🎯</button>
+    </div>
+  </section>
+
+  <!-- ══ RESULTS ══ -->
+  <section class="step" id="sR">
+    <div class="rtop">
+      <div class="emoji">🎯</div>
+      <h1>Your SIG Matches</h1>
+      <p>Here's where you belong in CompSoc</p>
+    </div>
+    <div id="results"></div>
+    <div class="retry">
+      <button class="btn btn-b" style="border-radius:100px;padding:12px 28px;" onclick="restart()">↺ Retake the quiz</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+const st = { course: null, exp: 3, interests: new Set(), project: null, vibe: null };
+let step = 0;
+
+// ── SIG data ───────────────────────────────────────────────
+const SIGS = {
+  ai: { name: 'Edinburgh AI', icon: '🤖', desc: 'Anything and everything AI — machine learning research, applied AI projects, and community discussion.' },
+  VenturePoint: { name: 'Venture Point', icon: '💼', desc: 'Edinburgh Venture Point is a student led community for ambitious founders and future investors' },
+  sigint: { name: 'SIGINT', icon: '🛡️', desc: 'The Cybersecurity Society of UoE. Dive into CTFs, ethical hacking, penetration testing, and all things security.' },
+  neurotech: { name: 'Neurotech SIG', icon: '🧬', desc: 'Exploring neurotechnology — brain-computer interfaces, neural engineering, and the intersection of neuroscience and tech.' },
+  Bitsig: { name: 'BitSIG', icon: '💻', desc: 'OS, computer network computer architectures, parallel and distributed systems' },
+  Tardis: { name: 'Tardis', icon: '🛠️', desc: 'We provide computing services to hobbyists and small organisation for any non-profit purpose' },
+  cloudsig: { name: 'CloudSIG', icon: '☁️', desc: 'For cloud enthusiasts — share and discuss everything from AWS and GCP to DevOps and infrastructure.' },
+  ProjectShare: { name: 'Project Share', icon: '🎨', desc: 'Project Share quickly evolved from casual discussion about personal project into vibrant community of creative minds' },
+  typesig: { name: 'TypeSig', icon: '📐', desc: 'An inclusive, welcoming space for type theory, functional programming, and the mathematics behind PLs.' },
+  quantsoc: { name: 'QuantSoc', icon: '📊', desc: 'Discuss quantitative finance, algorithmic trading, and ML applied to markets — from theory to practice.' },
+  gamedev: { name: 'GameDevSig', icon: '🕹️', desc: 'Bi-weekly workshops, game club, a platformer project, and game jams — for coders, artists, and composers alike.' },
+  cssig: { name: 'CSSIG', icon: '🏆', desc: 'Competitive Programming SIG — a welcoming space to tackle algorithms, solve problems, and compete.' },
+};
+
+// ── Discord invite links ────────────────────────────────────
+const DISCORD = {
+  ai:        'https://discord.com/channels/315277951597936640/1183134687548407929',
+  VenturePoint: 'No link',
+  Sigint:    'https://discord.gg/6aTwybA2Wj',
+  neurotech: 'No Link',
+  BitSIG:  'https://discord.com/invite/zcvWwFcyZd',
+  Tardis:   'No Link',
+  CloudSig: 'https://discord.com/channels/315277951597936640/1160622362614579300',
+  ProjectShare: 'https://discord.com/invite/wNGukFdBgp',
+  typesig:   'https://discord.gg/ZS5ctYQjzX',
+  quantsoc:  'https://discord.com/channels/315277951597936640/1160622341026488461',
+  gamedev:   'https://discord.gg/DXd6sXNCGz',
+  cssig:     'https://discord.com/invite/HMH9fRXyPc',
+};
+
+// ── WhatsApp links (Neurotech SIG — primary community channel) ──
+// null = placeholder — update with real WhatsApp group invite link
+const WHATSAPP = {
+  neurotech: null,  // TODO: insert Neurotech SIG WhatsApp group invite link here
+};
+
+// ── Scoring ────────────────────────────────────────────────
+function computeScores() {
+  const s = {};
+  Object.keys(SIGS).forEach(k => s[k] = 0);
+
+  // Course signal
+  const courseMap = {
+    cs:     { cssig: 2, typesig: 2, sigint: 1 },
+    ai:     { ai: 3, quantsoc: 2, cssig: 1, neurotech: 2 },
+    se:     { cloudsig: 2, sigint: 1 },
+    cogsci: { ai: 2, typesig: 2, neurotech: 3, ProjectShare: 1 },
+    maths:  { quantsoc: 3, typesig: 2, cssig: 1 },
+    other:  { gamedev: 1, ProjectShare: 2 },
+  };
+  Object.entries(courseMap[st.course] || {}).forEach(([k,v]) => s[k] += v);
+
+  // Experience signal
+  const exp = st.exp;
+  if (exp <= 2)       { s.gamedev+=1; s.ProjectShare+=1; s.cloudsig+=1; }
+  else if (exp === 3) { s.Tardis+=1; s.ai+=1; s.neurotech+=1; }
+  else                { s.sigint+=1; s.typesig+=1; s.quantsoc+=1; s.cssig+=1; }
+
+  // Interests signal (multi-select)
+const interestMap = {
+  security: { sigint: 3 },
+  gamedev:  { gamedev: 3, ProjectShare: 1 },
+  creative: { ProjectShare: 3, gamedev: 1 },
+  logic:    { typesig: 3, cssig: 2, quantsoc: 1 },
+  finance:  { quantsoc: 3 },
+  cloud:    { cloudsig: 3 },
+  aiml:     { ai: 3, quantsoc: 1, neurotech: 1 },
+  compete:  { cssig: 3, sigint: 1 },
+  art:      { gamedev: 2, ProjectShare: 2 },
+  neuro:    { neurotech: 3, ai: 1 },
+};
+  st.interests.forEach(i => {
+    Object.entries(interestMap[i] || {}).forEach(([k,v]) => s[k] += v);
+  });
+
+  // Dream project (strongest signal — single pick)
+const projectMap = {
+  sigint:      { sigint: 5 },
+  gamedev:     { gamedev: 5 },
+  ProjectShare: { ProjectShare: 5 },
+  typesig:     { typesig: 5 },
+  quantsoc:    { quantsoc: 5 },
+  cloudsig:    { cloudsig: 5 },
+  ai:          { ai: 5 },
+  cssig:       { cssig: 5 },
+  neurotech:   { neurotech: 5 },
+  Bitsig:      { Bitsig: 5 },
+  Tardis:      { Tardis: 5 },
+  VenturePoint: { VenturePoint: 5 },
+};;
+  Object.entries(projectMap[st.project] || {}).forEach(([k,v]) => s[k] += v);
+
+  // Community vibe signal
+  const vibeMap = {
+    competitive: { cssig:2, sigint:2 },
+    creative:    { gamedev:2, ProjectShare:2 },
+    builders:    { sigweb:2, cloudsig:2, Tardis:2 },
+    research:    { typesig:2, ai:2, quantsoc:2, neurotech:2 },
+    casual:      { gamedev:1, ProjectShare: 1, cloudsig:1 },
+  };
+  Object.entries(vibeMap[st.vibe] || {}).forEach(([k,v]) => s[k] += v);
+
+  return s;
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function goTo(n) {
+  const cur = step < 6 ? `s${step}` : 'sR';
+  document.getElementById(cur).classList.remove('active');
+  step = n;
+  const nxt = step < 6 ? `s${step}` : 'sR';
+  document.getElementById(nxt).classList.add('active');
+  updateProg();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProg() {
+  const pct = step === 0 ? 0 : step >= 6 ? 100 : Math.round((step / 5) * 100);
+  document.getElementById('prog').style.width = pct + '%';
+}
+
+// ── Interactions ───────────────────────────────────────────
+function pick(el, group) {
+  el.closest('.cgrid').querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  if (group === 'course')  { st.course  = el.dataset.v; document.getElementById('n1').disabled = false; }
+  if (group === 'project') { st.project = el.dataset.v; document.getElementById('n4').disabled = false; }
+  if (group === 'vibe')    { st.vibe    = el.dataset.v; document.getElementById('n5').disabled = false; }
+}
+
+function toggleChip(el) {
+  el.classList.toggle('sel');
+  const v = el.dataset.v;
+  el.classList.contains('sel') ? st.interests.add(v) : st.interests.delete(v);
+  document.getElementById('n3').disabled = st.interests.size === 0;
+}
+
+const SLIDER_LABELS = [
+  '',
+  "Just getting started — all paths are open",
+  "Beginner — I've written some code",
+  "Intermediate — I know my way around",
+  "Advanced — I tackle complex projects",
+  "Expert — I dream in code",
+];
+
+function onSlider(v) {
+  st.exp = parseInt(v);
+  document.getElementById('sdesc').textContent = SLIDER_LABELS[v];
+  const pct = ((v - 1) / 4) * 100;
+  document.getElementById('expSlider').style.background =
+    `linear-gradient(to right, var(--red) ${pct}%, var(--surface2) ${pct}%)`;
+}
+
+// ── Results ────────────────────────────────────────────────
+const DISCORD_ICON = `<svg width="14" height="11" viewBox="0 0 127.14 96.36" fill="white"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>`;
+
+const WA_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+function showResults() {
+  const scores = computeScores();
+  const max = Math.max(...Object.values(scores));
+  const top3 = Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  const badges = [
+    { cls: 'gold',   label: '🥇 Best match' },
+    { cls: 'silver', label: '🥈 Great fit'   },
+    { cls: 'bronze', label: '🥉 Good match'  },
+  ];
+
+  const list = document.getElementById('results');
+  list.innerHTML = '';
+
+  top3.forEach(([key, score], i) => {
+    const sig  = SIGS[key];
+    const pct  = max > 0 ? Math.round((score / max) * 100) : 0;
+    const b    = badges[i];
+
+    // Build link buttons
+    let linksHTML = '<div class="link-row">';
+
+    const discordUrl = DISCORD[key];
+    if (discordUrl) {
+      linksHTML += `<a class="dbtn" href="${discordUrl}" target="_blank" rel="noopener">${DISCORD_ICON} Join on Discord</a>`;
+    } else {
+      linksHTML += `<span class="link-todo" title="TODO: Update DISCORD object in source with real invite link">💬 Discord Link Not Available!</span>`;
+    }
+
+    if (key in WHATSAPP) {
+      const waUrl = WHATSAPP[key];
+      if (waUrl) {
+        linksHTML += `<a class="wabtn" href="${waUrl}" target="_blank" rel="noopener">${WA_ICON} Join WhatsApp</a>`;
+      } else {
+        linksHTML += `<span class="link-todo" title="TODO: Update WHATSAPP object in source with real group invite link">📱 WhatsApp Link Not Available!</span>`;
+      }
+    }
+
+    linksHTML += '</div>';
+
+    const div = document.createElement('div');
+    div.className = `rcard${i === 0 ? ' best' : ''}`;
+    div.style.animationDelay = `${i * 0.15}s`;
+    div.innerHTML = `
+      <div class="rh">
+        <span class="ri">${sig.icon}</span>
+        <div class="rn">${sig.name}</div>
+        <span class="rbadge ${b.cls}">${b.label}</span>
+      </div>
+      <p class="rdesc">${sig.desc}</p>
+      <div class="mrow"><span>Match score</span><span class="mpct">${pct}%</span></div>
+      <div class="mbar"><div class="mfill" id="mf${i}"></div></div>
+      ${linksHTML}`;
+    list.appendChild(div);
+    setTimeout(() => { document.getElementById(`mf${i}`).style.width = pct + '%'; }, 120 + i * 180);
+  });
+
+  goTo(6);
+}
+
+// ── Restart ────────────────────────────────────────────────
+function restart() {
+  st.course = null; st.exp = 3; st.interests.clear(); st.project = null; st.vibe = null;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('sel'));
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  document.getElementById('expSlider').value = 3;
+  onSlider(3);
+  ['n1','n3','n4','n5'].forEach(id => document.getElementById(id).disabled = true);
+  document.getElementById('results').innerHTML = '';
+  step = 6;
+  goTo(0);
+}
+
+// Init slider fill
+onSlider(3);
+</script>
+</body>
+</html>
