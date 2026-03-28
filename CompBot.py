@@ -19,4 +19,4 @@ async def on_member_join(member):
 async def ping(ctx):
     await ctx.send("pong 🏓")
 
-bot.run("MTQ4NzQwNjg2OTcwNTI2MTEyNg.GfH12M.ASk3HsbAk_YiUBBoZ9xsBCJtCHreDCVdzn4GRM")
+bot.run("No token for u")
